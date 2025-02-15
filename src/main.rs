@@ -1,4 +1,6 @@
 use crate::backends::Backend;
+use backends::Device;
+use nvml_wrapper::Nvml;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
     buffer::Buffer,
@@ -13,12 +15,12 @@ use std::io;
 mod backends;
 mod widgets;
 
-struct App {
-    backend: Backend,
+struct App<'a> {
+    device: Device<'a>,
     exit: bool,
 }
 
-impl Widget for &App {
+impl Widget for &App<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" GPU Stat ".bold());
         let instructions = Line::from(vec![" Quit ".into(), "<Q> ".blue().bold()]);
@@ -30,7 +32,7 @@ impl Widget for &App {
 
         let text: Text<'_> = Text::from(vec![Line::from(vec![
             "Value: ".into(),
-            self.backend.get_text().yellow(),
+            self.device.get_text().yellow(),
         ])]);
 
         Paragraph::new(text)
@@ -40,7 +42,7 @@ impl Widget for &App {
 
         let text: Text<'_> = Text::from(vec![Line::from(vec![
             "Value: ".into(),
-            format!("{:?}", self.backend.get_memory_samples()).yellow(),
+            format!("{:?}", self.device.get_memory_usage()).yellow(),
         ])]);
 
         Paragraph::new(text)
@@ -50,10 +52,17 @@ impl Widget for &App {
     }
 }
 
-impl App {
-    pub fn new() -> Self {
+impl<'a> App<'a> {
+    pub fn demo() -> Self {
         Self {
-            backend: Backend::nvidia(),
+            device: Device::demo(),
+            exit: false,
+        }
+    }
+
+    pub fn nvidia(nvml: &'a Nvml) -> Self {
+        Self {
+            device: Device::nvidia(nvml),
             exit: false,
         }
     }
@@ -62,7 +71,7 @@ impl App {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
-            self.backend.update_memory_samples();
+            self.device.update_memory_samples();
         }
         Ok(())
     }
@@ -98,7 +107,9 @@ impl App {
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
 
-    let mut app = App::new();
+    // let nvml = Nvml::init().expect("Failed to init nvml");
+    // let mut app = App::nvidia(&nvml);
+    let mut app = App::demo();
     let app_result = app.run(&mut terminal);
 
     ratatui::restore();

@@ -1,5 +1,4 @@
 use ratatui::{
-    style::{Color, Style, Stylize},
     text::Line,
     widgets::{Bar, BarChart, BarGroup, Block},
 };

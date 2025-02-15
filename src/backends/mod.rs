@@ -1,34 +1,36 @@
+mod demo;
 mod nvidia;
+use nvml_wrapper::Nvml;
+
+use crate::backends::demo::Demo;
 use crate::backends::nvidia::Nvidia;
 
-#[derive(Debug)]
-pub enum SampleValue {
-    F64(f64),
-    U32(u32),
-    U64(u64),
-    I64(i64),
+pub trait Backend {
+    fn get_text(&self) -> String;
+
+    fn get_memory_usage(&self) -> &[(u64, f64)];
+    fn update_memory_samples(&mut self);
 }
 
-#[derive(Debug)]
-pub struct Sample {
-    /// CPU timestamp in μs
-    pub timestamp: u64,
-    pub value: SampleValue,
-}
-
-pub enum Backend {
-    Nvidia(Box<Nvidia>),
+pub enum Device<'a> {
+    Nvidia(Box<Nvidia<'a>>),
+    Demo(Box<Demo>),
     None,
 }
 
-impl Backend {
-    pub fn nvidia() -> Self {
-        Self::Nvidia(Box::new(Nvidia::new()))
+impl<'a> Device<'a> {
+    pub fn nvidia(nvml: &'a Nvml) -> Self {
+        Self::Nvidia(Box::new(Nvidia::new(&nvml)))
+    }
+
+    pub fn demo() -> Self {
+        Self::Demo(Box::new(Demo::new()))
     }
 
     pub fn get_text(&self) -> String {
         match self {
-            Self::Nvidia(nvidia) => nvidia.get_text().unwrap_or("Error".to_string()),
+            Self::Nvidia(nvidia) => nvidia.get_text(),
+            Self::Demo(demo) => demo.get_text(),
             Self::None => "Error".to_string(),
         }
     }
@@ -36,12 +38,14 @@ impl Backend {
     pub fn update_memory_samples(&mut self) {
         match self {
             Self::Nvidia(nvidia) => nvidia.update_memory_samples(),
+            Self::Demo(demo) => demo.update_memory_samples(),
             Self::None => (),
         }
     }
-    pub fn get_memory_samples(&self) -> &[Sample] {
+    pub fn get_memory_usage(&self) -> &[(u64, f64)] {
         match self {
-            Self::Nvidia(nvidia) => &nvidia.memory_samples,
+            Self::Nvidia(nvidia) => &nvidia.get_memory_usage(),
+            Self::Demo(demo) => demo.get_memory_usage(),
             Self::None => &[],
         }
     }
