@@ -19,8 +19,8 @@ pub enum Device<'a> {
 }
 
 impl<'a> Device<'a> {
-    pub fn nvidia(nvml: &'a Nvml) -> Self {
-        Self::Nvidia(Box::new(Nvidia::new(&nvml)))
+    pub fn nvidia(nvml_device: nvml_wrapper::Device<'a>) -> Self {
+        Self::Nvidia(Box::new(Nvidia::new(nvml_device)))
     }
 
     pub fn demo() -> Self {

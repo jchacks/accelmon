@@ -8,10 +8,7 @@ pub struct Nvidia<'a> {
 }
 
 impl<'a> Nvidia<'a> {
-    pub fn new(nvml: &'a Nvml) -> Self {
-        let device_count = nvml.device_count().expect("Failed to get device count");
-        let nvml_device: nvml_wrapper::Device<'a> =
-            nvml.device_by_index(0).expect("Failed to get NVML device");
+    pub fn new(nvml_device: nvml_wrapper::Device<'a>) -> Self {
         Self {
             nvml_device,
             memory_samples: Vec::new(),
@@ -21,7 +18,7 @@ impl<'a> Nvidia<'a> {
 
 fn extract_value(value: SampleValue) -> f64 {
     match value {
-        SampleValue::F64(x) => x as f64,
+        SampleValue::F64(x) => x,
         SampleValue::U32(x) => x as f64,
         SampleValue::U64(x) => x as f64,
         SampleValue::I64(x) => x as f64,

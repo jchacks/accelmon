@@ -1,5 +1,4 @@
 use crate::backends::Backend;
-use std::time;
 pub struct Demo {
     memory_samples: Vec<(u64, f64)>,
 }
@@ -14,7 +13,7 @@ impl Demo {
 
 impl Backend for Demo {
     fn get_text(&self) -> String {
-        "".into()
+        "Sample text".into()
     }
 
     fn get_memory_usage(&self) -> &[(u64, f64)] {

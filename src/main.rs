@@ -1,4 +1,3 @@
-use crate::backends::Backend;
 use backends::Device;
 use nvml_wrapper::Nvml;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -61,8 +60,9 @@ impl<'a> App<'a> {
     }
 
     pub fn nvidia(nvml: &'a Nvml) -> Self {
+        let device = Device::nvidia(nvml.device_by_index(0).unwrap());
         Self {
-            device: Device::nvidia(nvml),
+            device,
             exit: false,
         }
     }
@@ -105,13 +105,17 @@ impl<'a> App<'a> {
 }
 
 fn main() -> io::Result<()> {
+    let nvml = Nvml::init();
+    let mut app = match &nvml {
+        Ok(nvml) => App::nvidia(nvml),
+        Err(err) => {
+            eprintln!("Err {err:?} while loading nvml; loading demo app...");
+            App::demo()
+        }
+    };
+
     let mut terminal = ratatui::init();
-
-    // let nvml = Nvml::init().expect("Failed to init nvml");
-    // let mut app = App::nvidia(&nvml);
-    let mut app = App::demo();
     let app_result = app.run(&mut terminal);
-
     ratatui::restore();
     app_result
 }
